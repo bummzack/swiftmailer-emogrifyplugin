@@ -1,0 +1,38 @@
+{
+    "name": "bummzack/swiftmailer-emogrifyplugin",
+    "description": "Inline CSS in the HTML output of SwiftMailer using Emogrifier.",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "swiftmailer",
+        "emogrifier",
+        "plugin"
+    ],
+    "require": {
+        "php": "^5.6 || ^7.0",
+        "swiftmailer/swiftmailer": "^5.4",
+        "pelago/emogrifier": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/PHPUnit": "^5.7"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.x-dev"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Bummzack\\SwiftMailer\\EmogrifyPlugin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Bummzack\\SwiftMailer\\EmogrifyPlugin\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "lint": "phpcs -s src/ tests/"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
