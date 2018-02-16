@@ -37,3 +37,30 @@ $plugin->getEmogrifier()->setCss('.customStyle: { color: red; };');
 
 **Please note:** Calling `setHtml` on the Emogrifier instance doesn't have an effect, since it will be replaced with
 the message body!
+
+### Example
+
+Here's how you could use the plugin to send emails with custom styles loaded from a file:
+
+```php
+$emogrifier = new Pelago\Emogrifier();
+$emogrifier->setCss(file_get_contents( /* path to your CSS file */ ));
+
+// Create the Mailer using any Transport
+$mailer = new Swift_Mailer(
+    new Swift_SmtpTransport('smtp.example.org', 25)
+);
+
+// Use Emogrifier plugin to inline styles. You can pass the emogrifier instance as a parameter
+$mailer->registerPlugin(new Bummzack\SwiftMailer\EmogrifyPlugin\EmogrifierPlugin($emogrifier));
+
+$message = new Swift_Message();
+$message
+    ->setSubject('Your subject')
+    ->setFrom(['test@example.com' => 'Test'])
+    ->setTo(['receiver@example.com'])
+    ->setBody('<p>My custom HTML</p>', 'text/html');
+
+// Send your email
+$mailer->send($message);
+```
