@@ -1,9 +1,9 @@
 # Swift Mailer Emogrify Plugin
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/bummzack/swiftmailer-emogrifyplugin/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/bummzack/swiftmailer-emogrifyplugin/?branch=master)
 [![Code Coverage](https://codecov.io/gh/bummzack/swiftmailer-emogrifyplugin/branch/master/graph/badge.svg)](https://codecov.io/gh/bummzack/swiftmailer-emogrifyplugin)
 [![Build Status](https://travis-ci.org/bummzack/swiftmailer-emogrifyplugin.svg?branch=master)](https://travis-ci.org/bummzack/swiftmailer-emogrifyplugin)
 [![Latest Stable Version](https://poser.pugx.org/bummzack/swiftmailer-emogrifyplugin/v/stable)](https://packagist.org/packages/bummzack/swiftmailer-emogrifyplugin)
-
 
 Inline CSS in the HTML output of SwiftMailer using [Emogrifier](https://github.com/MyIntervals/emogrifier).
 
