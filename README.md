@@ -17,7 +17,7 @@ Requirements:
 
  - PHP 5.6+
  - SwiftMailer 5.x
- - Emogrifier 2.x
+ - Emogrifier 3.x
  
 ## Usage
 
