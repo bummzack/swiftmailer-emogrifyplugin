@@ -10,19 +10,16 @@ class EmogrifierPluginTest extends \PHPUnit_Framework_TestCase
 {
     /**
      */
-    public function testGetterSetter()
+    public function testCSSGetterSetter()
     {
         $plugin = new EmogrifierPlugin();
 
-        // The default is an emogrifier instance
-        $this->assertInstanceOf(Emogrifier::class, $plugin->getEmogrifier());
+        // The default is an empty string
+        $this->assertEquals('', $plugin->getCSSContent());
 
-        $newInstance = new Emogrifier();
-        $plugin->setEmogrifier($newInstance);
-        $this->assertEquals($newInstance, $plugin->getEmogrifier());
-
-        $plugin = new EmogrifierPlugin($newInstance);
-        $this->assertEquals($newInstance, $plugin->getEmogrifier());
+        $css = 'body { background: red; }';
+        $plugin->setCSSContent($css);
+        $this->assertEquals($css, $plugin->getCSSContent());
     }
 
     public function testBodyOnly()

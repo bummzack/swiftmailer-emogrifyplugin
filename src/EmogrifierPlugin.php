@@ -2,7 +2,7 @@
 
 namespace Bummzack\SwiftMailer\EmogrifyPlugin;
 
-use Pelago\Emogrifier;
+use Pelago\Emogrifier\CssInliner;
 use Swift_Events_SendEvent;
 use Swift_Events_SendListener;
 
@@ -14,41 +14,24 @@ use Swift_Events_SendListener;
  */
 class EmogrifierPlugin implements Swift_Events_SendListener
 {
-    /**
-     * @var Emogrifier
-     */
-    protected $emogrifier;
+    protected $css_content = '';
 
     /**
-     * @param Emogrifier $emogrifier
-     */
-    public function __construct(Emogrifier $emogrifier = null)
-    {
-        if ($emogrifier) {
-            $this->emogrifier = $emogrifier;
-        } else {
-            $this->emogrifier = new Emogrifier();
-        }
-    }
-
-    /**
-     * Access to the emogrifier instance that's being used internally
-     * @return Emogrifier
-     */
-    public function getEmogrifier()
-    {
-        return $this->emogrifier;
-    }
-
-    /**
-     * Set the emogrifier instance that's being used internally
-     * @param Emogrifier $emogrifier
+     * @param string CSS styles
      * @return $this
      */
-    public function setEmogrifier(Emogrifier $emogrifier)
+    public function setCSSContent($cssContent)
     {
-        $this->emogrifier = $emogrifier;
+        $this->css_content = $cssContent;
         return $this;
+    }
+
+    /**
+     * @return string CSS styles
+     */
+    public function getCSSContent()
+    {
+        return $this->css_content;
     }
 
     /**
@@ -58,10 +41,12 @@ class EmogrifierPlugin implements Swift_Events_SendListener
     {
         $message = $event->getMessage();
 
+        $css = $this->getCSSContent();
+
         $body = $message->getBody();
         if (!empty($body) && $message->getContentType() !== 'text/plain') {
-            $this->emogrifier->setHtml($body);
-            $message->setBody($this->emogrifier->emogrify());
+            $body = CssInliner::fromHtml($body)->inlineCss($css)->render();
+            $message->setBody($body);
         }
 
         foreach ($message->getChildren() as $messagePart) {
@@ -72,8 +57,8 @@ class EmogrifierPlugin implements Swift_Events_SendListener
                     continue;
                 }
 
-                $this->emogrifier->setHtml($body);
-                $messagePart->setBody($this->emogrifier->emogrify());
+                $body = CssInliner::fromHtml($body)->inlineCss($css)->render();
+                $messagePart->setBody($body);
             }
         }
     }
