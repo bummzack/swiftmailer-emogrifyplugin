@@ -16,8 +16,8 @@ Install via composer, using:
 Requirements:
 
  - PHP 5.6+
- - SwiftMailer 5.x
- - Emogrifier 3.x
+ - SwiftMailer 6.x
+ - Emogrifier 6.x
  
 ## Usage
 

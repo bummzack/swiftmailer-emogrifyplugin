@@ -4,181 +4,148 @@
 namespace Bummzack\SwiftMailer\EmogrifyPlugin\Tests;
 
 use Bummzack\SwiftMailer\EmogrifyPlugin\EmogrifierPlugin;
-use Pelago\Emogrifier;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use PHPUnit\Framework\TestCase;
 
-class EmogrifierPluginTest extends \PHPUnit_Framework_TestCase
+class EmogrifierPluginTest extends TestCase
 {
-    /**
-     */
-    public function testGetterSetter()
-    {
-        $plugin = new EmogrifierPlugin();
-
-        // The default is an emogrifier instance
-        $this->assertInstanceOf(Emogrifier::class, $plugin->getEmogrifier());
-
-        $newInstance = new Emogrifier();
-        $plugin->setEmogrifier($newInstance);
-        $this->assertEquals($newInstance, $plugin->getEmogrifier());
-
-        $plugin = new EmogrifierPlugin($newInstance);
-        $this->assertEquals($newInstance, $plugin->getEmogrifier());
-    }
+    use MockeryPHPUnitIntegration;
 
     public function testBodyOnly()
     {
         $html = '<style>.test { color: red; }</style><p class="test">Hello World</p>';
 
-        $message = $this->createMockedMessage($html);
-        $event = $this->createMockedSendEvent($message);
-
         $plugin = new EmogrifierPlugin();
-        $emogrifier = $this->getMockBuilder(Emogrifier::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emogrifier->expects($this->once())
-            ->method('setHtml')
-            ->with(
-                $this->equalTo($html)
-            );
-        $emogrifier->expects($this->once())
-            ->method('emogrify');
 
-        $plugin->setEmogrifier($emogrifier);
-        $plugin->beforeSendPerformed($event);
+        $message = $this->createMessage($html);
+        $message->shouldReceive('setBody')
+            ->once()
+            ->with('<p class="test" style="color: red;">Hello World</p>');
+
+        $evt = $this->createSendEvent($message);
+
+        $plugin->beforeSendPerformed($evt);
+        $plugin->sendPerformed($evt);
     }
 
     public function testWithMessagePart()
     {
-        $htmlBody = '<p>MessageBody</p>';
+        $htmlBody = '<style>p { color: red; }</style><p>MessageBody</p>';
         $htmlPart = '<p>MessagePart</p>';
 
-        $part1 = $this->createMockedMessagePart($htmlPart);
-        $part2 = $this->createMockedMessagePart('Plain text', 'text/plain');
+        $part1 = $this->createMessagePart($htmlPart);
+        $part2 = $this->createMessagePart('Plain text', 'text/plain');
 
-        $message = $this->createMockedMessage($htmlBody, 'text/html', [$part1, $part2]);
-        $event = $this->createMockedSendEvent($message);
+        $message = $this->createMessage($htmlBody, 'text/html', [$part1, $part2]);
+
+        $message->shouldReceive('setBody')
+            ->once()
+            ->with('<p style="color: red;">MessageBody</p>');
+
+        $part1->shouldReceive('setBody')
+            ->once()
+            ->with('<p>MessagePart</p>');
+
+        $part2->shouldNotHaveReceived('setBody');
+
+        $event = $this->createSendEvent($message);
 
         $plugin = new EmogrifierPlugin();
 
-        $emogrifier = $this->getMockBuilder(Emogrifier::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $plugin->beforeSendPerformed($event);
+    }
 
-        $emogrifier->expects($this->any())
-            ->method('setHtml')
-            ->withConsecutive(
-                $this->equalTo($htmlBody),
-                $this->equalTo($htmlPart)
-            );
+    public function testWithCss()
+    {
+        $css = 'div { color: green; } p { color: red; }';
+        $htmlBody = '<div>MessageBody</div>';
+        $htmlPart = '<p>MessagePart</p>';
 
-        $emogrifier->expects($this->exactly(2))
-            ->method('emogrify');
+        $part = $this->createMessagePart($htmlPart);
+        $message = $this->createMessage($htmlBody, 'text/html', [$part]);
 
+        $message->shouldReceive('setBody')
+            ->once()
+            ->with('<div style="color: green;">MessageBody</div>');
 
-        $plugin->setEmogrifier($emogrifier);
+        $part->shouldReceive('setBody')
+            ->once()
+            ->with('<p style="color: red;">MessagePart</p>');
+
+        $event = $this->createSendEvent($message);
+
+        $plugin = new EmogrifierPlugin();
+        $this->assertNull($plugin->getCss());
+        $plugin->setCss($css);
+        $this->assertEquals($css, $plugin->getCss());
+
         $plugin->beforeSendPerformed($event);
     }
 
     public function testEmptyBodies()
     {
-        $message = $this->createMockedMessage('', 'text/html', [
-            $this->createMockedMessagePart('')
+        $message = $this->createMessage('', 'text/html', [
+            $part = $this->createMessagePart('')
         ]);
 
-        $event = $this->createMockedSendEvent($message);
+        $part->shouldNotHaveReceived('setBody');
+        $message->shouldNotHaveReceived('setBody');
+
+        $event = $this->createSendEvent($message);
 
         $plugin = new EmogrifierPlugin();
-
-        $emogrifier = $this->getMockBuilder(Emogrifier::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $emogrifier->expects($this->never())
-            ->method('setHtml');
-
-        $emogrifier->expects($this->never())
-            ->method('emogrify');
-
-
-        $plugin->setEmogrifier($emogrifier);
         $plugin->beforeSendPerformed($event);
     }
 
     public function testSendPerformed()
     {
-        $event = $this->createMockedSendEvent($this->createMockedMessage(''));
+        $event = $this->createSendEvent($msg = $this->createMessage(''));
+        $msg->shouldNotReceive('getBody', 'getContentType', 'getChildren');
 
         $plugin = new EmogrifierPlugin();
-        $this->assertEmpty($plugin->sendPerformed($event));
+        $plugin->sendPerformed($event);
     }
 
-    /**
-     * Build a mocked send-event that will return the given message
-     * @param $message
-     * @return \PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function createMockedSendEvent($message)
+    protected function createMessage($body = '', $mimeType = 'text/html', $parts = [])
     {
-        $event = $this->getMockBuilder('Swift_Events_SendEvent')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $event->expects($this->any())
-            ->method('getMessage')
-            ->will($this->returnValue($message));
-
-        return $event;
-    }
-
-    /**
-     * Build a mocked message part
-     * @param $body
-     * @param string $contentType
-     * @return \PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function createMockedMessagePart($body, $contentType = 'text/html')
-    {
-        $messagePart = $this->getMockBuilder('Swift_Mime_MimeEntity')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $messagePart->expects($this->any())
-            ->method('getBody')
-            ->will($this->returnValue($body));
-
-        $messagePart->expects($this->any())
-            ->method('getContentType')
-            ->will($this->returnValue($contentType));
-
-        return $messagePart;
-    }
-
-    /**
-     * Build a mocked swift message
-     * @param $body
-     * @param string $contentType
-     * @param array $messageParts
-     * @return \PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function createMockedMessage($body, $contentType = 'text/html', array $messageParts = [])
-    {
-        $message = $this->getMockBuilder('Swift_Mime_Message')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $message->expects($this->any())
-            ->method('getBody')
-            ->will($this->returnValue($body));
-
-        $message->expects($this->any())
-            ->method('getContentType')
-            ->will($this->returnValue($contentType));
-
-        $message->expects($this->any())
-            ->method('getChildren')
-            ->will($this->returnValue($messageParts));
+        $message = $this->getMockery('Swift_Mime_SimpleMessage')->shouldIgnoreMissing();
+        $message->shouldReceive('getContentType')
+            ->zeroOrMoreTimes()
+            ->andReturn($mimeType);
+        $message->shouldReceive('getBody')
+            ->zeroOrMoreTimes()
+            ->andReturn($body);
+        $message->shouldReceive('getChildren')
+            ->zeroOrMoreTimes()
+            ->andReturn($parts);
 
         return $message;
+    }
+
+    protected function createMessagePart($body = '', $mimeType = 'text/html')
+    {
+        $part = $this->getMockery('Swift_Mime_SimpleMimeEntity')->shouldIgnoreMissing();
+        $part->shouldReceive('getContentType')
+            ->zeroOrMoreTimes()
+            ->andReturn($mimeType);
+        $part->shouldReceive('getBody')
+            ->zeroOrMoreTimes()
+            ->andReturn($body);
+        return $part;
+    }
+
+    protected function createSendEvent($message)
+    {
+        $evt = $this->getMockery('Swift_Events_SendEvent')->shouldIgnoreMissing();
+        $evt->shouldReceive('getMessage')
+            ->zeroOrMoreTimes()
+            ->andReturn($message);
+
+        return $evt;
+    }
+
+    protected function getMockery($class)
+    {
+        return \Mockery::mock($class);
     }
 }

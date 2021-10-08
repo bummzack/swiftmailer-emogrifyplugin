@@ -2,9 +2,10 @@
 
 namespace Bummzack\SwiftMailer\EmogrifyPlugin;
 
-use Pelago\Emogrifier;
+use Pelago\Emogrifier\CssInliner;
 use Swift_Events_SendEvent;
 use Swift_Events_SendListener;
+use Symfony\Component\CssSelector\Exception\ParseException;
 
 /**
  * Emogrifier Plugin that will convert your CSS to inline styles.
@@ -14,54 +15,31 @@ use Swift_Events_SendListener;
  */
 class EmogrifierPlugin implements Swift_Events_SendListener
 {
-    /**
-     * @var Emogrifier
-     */
-    protected $emogrifier;
+    protected $css = null;
 
-    /**
-     * @param Emogrifier $emogrifier
-     */
-    public function __construct(Emogrifier $emogrifier = null)
+    public function getCss(): ?string
     {
-        if ($emogrifier) {
-            $this->emogrifier = $emogrifier;
-        } else {
-            $this->emogrifier = new Emogrifier();
-        }
+        return $this->css;
     }
 
-    /**
-     * Access to the emogrifier instance that's being used internally
-     * @return Emogrifier
-     */
-    public function getEmogrifier()
+    public function setCss($value): self
     {
-        return $this->emogrifier;
-    }
-
-    /**
-     * Set the emogrifier instance that's being used internally
-     * @param Emogrifier $emogrifier
-     * @return $this
-     */
-    public function setEmogrifier(Emogrifier $emogrifier)
-    {
-        $this->emogrifier = $emogrifier;
+        $this->css = $value;
         return $this;
     }
 
     /**
-     * @param Swift_Events_SendEvent $event
+     * @param Swift_Events_SendEvent $evt
+     * @throws ParseException
      */
-    public function beforeSendPerformed(Swift_Events_SendEvent $event)
+    public function beforeSendPerformed(Swift_Events_SendEvent $evt)
     {
-        $message = $event->getMessage();
+        $message = $evt->getMessage();
 
         $body = $message->getBody();
         if (!empty($body) && $message->getContentType() !== 'text/plain') {
-            $this->emogrifier->setHtml($body);
-            $message->setBody($this->emogrifier->emogrify());
+            $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->renderBodyContent();
+            $message->setBody($html);
         }
 
         foreach ($message->getChildren() as $messagePart) {
@@ -72,16 +50,16 @@ class EmogrifierPlugin implements Swift_Events_SendListener
                     continue;
                 }
 
-                $this->emogrifier->setHtml($body);
-                $messagePart->setBody($this->emogrifier->emogrify());
+                $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->renderBodyContent();
+                $messagePart->setBody($html);
             }
         }
     }
 
     /**
-     * @param Swift_Events_SendEvent $event
+     * @param Swift_Events_SendEvent $evt
      */
-    public function sendPerformed(\Swift_Events_SendEvent $event)
+    public function sendPerformed(\Swift_Events_SendEvent $evt)
     {
         /* No op */
     }
