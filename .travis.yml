@@ -2,11 +2,9 @@ language: php
 sudo: false
 dist: trusty
 
-
-
 matrix:
   include:
-    - php: 7.1
+    - php: 7.2
       env:
         - PHPCS_TEST=1
         - PHPUNIT_TEST=1
