@@ -1,6 +1,5 @@
 language: php
 sudo: false
-dist: trusty
 
 matrix:
   include:
@@ -17,7 +16,7 @@ matrix:
 
 before_script:
   # Init PHP
-  - composer self-update || true
+  - composer self-update --2 || true
   - phpenv rehash
   - phpenv config-rm xdebug.ini || true
 
