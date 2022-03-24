@@ -11,6 +11,27 @@ class EmogrifierPluginTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
+    public function testCompleteHtml()
+    {
+        $html = '<html><head><title>Test</title></head><body>42</body></html>';
+
+        $plugin = new EmogrifierPlugin();
+
+        $message = $this->createMessage($html);
+        $message->shouldReceive('setBody')
+            ->once()
+            ->withArgs(function ($code) {
+                return strpos($code, '<html>') !== false
+                    && strpos($code, '<title>Test</title>') !== false
+                    && strpos($code, '<body>42</body>') !== false;
+            });
+
+        $evt = $this->createSendEvent($message);
+
+        $plugin->beforeSendPerformed($evt);
+        $plugin->sendPerformed($evt);
+    }
+
     public function testBodyOnly()
     {
         $html = '<style>.test { color: red; }</style><p class="test">Hello World</p>';
@@ -20,7 +41,9 @@ class EmogrifierPluginTest extends TestCase
         $message = $this->createMessage($html);
         $message->shouldReceive('setBody')
             ->once()
-            ->with('<p class="test" style="color: red;">Hello World</p>');
+            ->withArgs(function ($code) {
+                return strpos($code, '<p class="test" style="color: red;">Hello World</p>') !== false;
+            });
 
         $evt = $this->createSendEvent($message);
 
@@ -40,11 +63,15 @@ class EmogrifierPluginTest extends TestCase
 
         $message->shouldReceive('setBody')
             ->once()
-            ->with('<p style="color: red;">MessageBody</p>');
+            ->withArgs(function ($code) {
+                return strpos($code, '<p style="color: red;">MessageBody</p>') !== false;
+            });
 
         $part1->shouldReceive('setBody')
             ->once()
-            ->with('<p>MessagePart</p>');
+            ->withArgs(function ($code) {
+                return strpos($code, '<p>MessagePart</p>') !== false;
+            });
 
         $part2->shouldNotHaveReceived('setBody');
 
@@ -66,11 +93,15 @@ class EmogrifierPluginTest extends TestCase
 
         $message->shouldReceive('setBody')
             ->once()
-            ->with('<div style="color: green;">MessageBody</div>');
+            ->withArgs(function ($code) {
+                return strpos($code, '<div style="color: green;">MessageBody</div>') !== false;
+            });
 
         $part->shouldReceive('setBody')
             ->once()
-            ->with('<p style="color: red;">MessagePart</p>');
+            ->withArgs(function ($code) {
+                return strpos($code, '<p style="color: red;">MessagePart</p>') !== false;
+            });
 
         $event = $this->createSendEvent($message);
 
