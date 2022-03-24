@@ -38,7 +38,7 @@ class EmogrifierPlugin implements Swift_Events_SendListener
 
         $body = $message->getBody();
         if (!empty($body) && $message->getContentType() !== 'text/plain') {
-            $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->renderBodyContent();
+            $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->render();
             $message->setBody($html);
         }
 
@@ -50,7 +50,7 @@ class EmogrifierPlugin implements Swift_Events_SendListener
                     continue;
                 }
 
-                $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->renderBodyContent();
+                $html = CssInliner::fromHtml($body)->inlineCss($this->css ?? '')->render();
                 $messagePart->setBody($html);
             }
         }
